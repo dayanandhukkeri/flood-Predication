@@ -6,6 +6,10 @@ import pickle
 import base64
 from training import prediction
 import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 app = flask.Flask(__name__)
 
 data = [{'name':'Delhi', "sel": "selected"}, {'name':'Mumbai', "sel": ""}, {'name':'Kolkata', "sel": ""}, {'name':'Bangalore', "sel": ""}, {'name':'Chennai', "sel": ""}]
@@ -101,11 +105,43 @@ def get_predicts():
             pred = "Safe"
         else:
             pred = "Unsafe"
-        
-        return render_template('predicts.html', cityname="Information about " + cityname, cities=cities, temp=round(final[0], 2), maxt=round(final[1], 2), wspd=round(final[2], 2), cloudcover=round(final[3], 2), percip=round(final[4], 2), humidity=round(final[5], 2), pred = pred)
+
+        sender_email = "sanjayr33318@gmail.com"  # Replace with your Gmail
+        sender_password = "hnzb bwrf qpdw sryf"  # Replace with your Gmail password or app password
+        subject = f"Flood Prediction Results"
+        body = f"""
+        Here are the prediction results for {cityname}:
+
+        Temperature: {round(final[0], 2)}°C
+        Max Temperature: {round(final[1], 2)}°C
+        Wind Speed: {round(final[2], 2)} km/h
+        Cloud Cover: {round(final[3], 2)}%
+        Precipitation: {round(final[4], 2)} mm
+        Humidity: {round(final[5], 2)}%
+        Prediction: {pred}
+
+        Stay safe,
+        FloodML Team
+        """
+
+        # Sending email
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = 'varshithamunegowda@gmail.com'
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+
+        return render_template('predicts.html', cityname="Information about " + cityname, cities=cities, temp=round(final[0], 2), maxt=round(final[1], 2), wspd=round(final[2], 2), cloudcover=round(final[3], 2), percip=round(final[4], 2), humidity=round(final[5], 2), pred=pred)
     except Exception as e:
         print(e)
         return render_template('predicts.html', cities=cities, cityname="Oops, we weren't able to retrieve data for that city.")
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
